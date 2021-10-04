@@ -13,6 +13,7 @@ from models.Instrument import Instrument
 from models.Space import Space
 from models.Portfolio import Portfolio
 from models.Order import Order
+from models.Token import Token
 
 
 def scrape_data(base_url: str, url_endpoints: list):
@@ -209,6 +210,8 @@ def main():
     headlines = aggregate_scores(headlines)
     headlines = find_gm_tickers(headlines)
     headlines.to_csv("tickers_scores.csv")
+
+    Token().get_new_token()
 
     # uncomment this and comment all lines from scrape_data() function to find_gm_tickers() function in main() to use saved data
     # headlines = pd.read_csv("tickers_scores.csv")
