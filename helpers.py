@@ -1,10 +1,12 @@
 import os
 import requests
+from dotenv import load_dotenv
 
 
 class RequestHandler():
 
     def __init__(self):
+        load_dotenv()
         self.headers = {'Authorization': f'Bearer ' + os.getenv('TOKEN_KEY')}
         self.auth_url: str = os.environ.get("AUTH_URL")
         self.url_trading: str = os.environ.get("TRADING_URL")

@@ -3,7 +3,6 @@ import os
 import requests
 import pandas as pd
 import datetime
-import pprint
 import time
 
 from bs4 import BeautifulSoup
@@ -12,7 +11,7 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from models.FIGI import FIGI
 from models.Instrument import Instrument
 from models.Space import Space
-from models.Token import Token
+from models.Portfolio import Portfolio
 from models.Order import Order
 
 
@@ -44,11 +43,14 @@ def scrape_data(base_url: str, url_endpoints: list):
 
     columns = ['headline', 'ticker', 'timestamp']
     headlines_df = pd.DataFrame(headlines, columns=columns)
+    print(headlines_df.head())
     return headlines_df
 
 
 def filter_dataframe(dataframe, removable_tickers: list):
-    return dataframe[~dataframe.loc[:, 'ticker'].isin(removable_tickers)].copy()
+    filtered_dataframe = dataframe[~dataframe.loc[:, 'ticker'].isin(removable_tickers)].copy()
+    print(filtered_dataframe.head())
+    return filtered_dataframe
 
 
 def sentiment_analysis(dataframe):
@@ -63,36 +65,44 @@ def sentiment_analysis(dataframe):
 
     # append scores to DataFrame
     dataframe.loc[:, 'score'] = scores
-
+    print(dataframe.head())
     return dataframe
 
 
 def aggregate_scores(dataframe):
-    # dataframe = sentiment_analysis(dataframe)
     grouped_tickers = dataframe.groupby('ticker').mean()
     grouped_tickers.reset_index(level=0, inplace=True)
-
+    print(grouped_tickers.head())
     return grouped_tickers
 
 
-
 def find_gm_tickers(dataframe):
+    print('Collecting tickers...')
+
     gm_tickers = []
     iteration = 1
 
     for ticker in dataframe.loc[:, 'ticker']:
-        print(ticker)
         job = {'query': ticker, 'exchCode': 'GM'}
         gm_ticker = FIGI().search_jobs(job)
-        print(gm_ticker)
+
+        # if instrument listed on GM, then collect ticker
         if gm_ticker.get('data'):
-            gm_tickers.append(gm_ticker.get('data')[0].get('ticker'))
+            result = gm_ticker.get('data')[0].get('ticker')
         else:
-            gm_tickers.append('Ticker not found')
+            result = 'NA'
+
+        print(f'{ticker} is {result}')
+        gm_tickers.append(result)
         iteration += 1
+
+        # OpenFIGI allows 20 requests per minute, thus sleep for 60 seconds after every 20 requests
         if iteration % 20 == 0:
+            print('Sleeping for 60 seconds...')
             time.sleep(60)
+
     dataframe.loc[:, 'gm_ticker'] = gm_tickers
+    print(dataframe.head())
 
     return dataframe
 
@@ -101,17 +111,23 @@ def get_isins(dataframe):
     isins = []
 
     for ticker in dataframe.loc[:, 'gm_ticker']:
-        if ticker == 'Ticker not found':
-            isins.append('No ISIN found.')
-        else:
-            instrument = Instrument().get_instrument(ticker)
+        if ticker == 'NA':
+            isins.append('NA')
 
-            if instrument.get('count') != 0:
-                isins.append(instrument.get('results')[0].get('isin'))
-            else:
-                isins.append('No ISIN found.')
+        else:
+            try:
+                instrument = Instrument().get_instrument(ticker)
+
+                if instrument.get('count') > 0:
+                    isins.append(instrument.get('results')[0].get('isin'))
+                else:
+                    isins.append('NA')
+
+            except Exception as e:
+                print(e)
 
     dataframe.loc[:, 'isin'] = isins
+    print(dataframe)
     return dataframe
 
 
@@ -119,11 +135,13 @@ def trade_decision(dataframe):
     buy = []
     sell = []
     for index, row in dataframe.iterrows():
-        if row['score'] > 0.5 and row['isin'] != 'No ISIN found':
-            print(f'Buy {row["ticker"]} with sentiment score {row["score"]} and ISIN {row["isin"]}')
+        # if sentiment higher than 0.5 and ISIN present, place ISIN in buy list
+        if row['score'] > 0.5 and row['isin'] != 'NA':
+            print(f'Buy {row["ticker"]} ({row["isin"]}) with sentiment score {row["score"]}.')
             buy.append(row['isin'])
-        if row['score'] < -0.5 and row['isin'] != 'No ISIN found':
-            print(f'Sell {row["ticker"]} with sentiment score {row["score"]} and ISIN {row["isin"]}')
+        # if sentiment lower than -0.5 and ISIN present, place ISIN in sell list
+        if row['score'] < -0.5 and row['isin'] != 'NA':
+            print(f'Sell {row["ticker"]} ({row["isin"]}) with sentiment score {row["score"]}.')
             sell.append(row['isin'])
 
     return buy, sell
@@ -140,16 +158,23 @@ def place_trades(dataframe):
     # place buy orders
     for isin in buy:
         side = 'buy'
-        order = Order().place_order(isin, valid_time, 1, side, space_uuid)
+        quantity = 1
+        order = Order().place_order(isin, valid_time, quantity, side, space_uuid)
         orders.append(order)
-        print(order)
+        print(f'You are {side}ing {quantity} share(s) of instrument {isin}.')
+
+    portfolio = Portfolio().get_portfolio(space_uuid)
 
     # place sell orders
     for isin in sell:
-        side = 'sell'
-        order = Order().place_order(isin, valid_time, 1, side, space_uuid)
-        orders.append(order)
-        print(order)
+        if isin in portfolio:
+            side = 'sell'
+            quantity = 1
+            order = Order().place_order(isin, valid_time, quantity, side, space_uuid)
+            orders.append(order)
+            print(f'You are {side}ing {quantity} share(s) of instrument {isin}.')
+        else:
+            print(f'You do not have sufficient holdings of instrument {isin} to place a sell order.')
 
     return orders
 
@@ -162,10 +187,11 @@ def activate_order(orders):
 
 
 def main():
-    # import data source
+    # set options to display all columns and rows when printing dataframes
     pd.options.display.max_columns = None
     pd.options.display.max_rows = None
 
+    # import data source
     base_url = 'https://www.marketwatch.com/investing/'
     url_endpoints = ['barrons', 'aerospace-defense', 'autos', 'biotech', 'energy', 'health-care', 'media',
                      'pharmaceutical',
@@ -173,30 +199,26 @@ def main():
                      'metals-mining', 'real-estate-construction', 'software', 'technology']
 
     headlines = scrape_data(base_url, url_endpoints)
-    print(headlines.head())
 
+    # pre-emptively decide on some tickers to exclude to make dataset smaller
     removable_tickers = ['SPX', 'DJIA', 'BTCUSD', '', 'GCZ21', 'HK:3333', 'DX:DAX', 'XE:VOW', 'UK:AZN', 'GBPUSD',
-                         'CA:WEED', 'UK:UKX', 'CA:ACB', 'CA:ACB', 'CA:CL', 'BX:TMUBMUSD10Y',]
+                         'CA:WEED', 'UK:UKX', 'CA:ACB', 'CA:ACB', 'CA:CL', 'BX:TMUBMUSD10Y', ]
+
     headlines = filter_dataframe(headlines, removable_tickers)
-    print(headlines)
-
     headlines = sentiment_analysis(headlines)
-    print(headlines)
-
     headlines = aggregate_scores(headlines)
-    print(headlines)
-
     headlines = find_gm_tickers(headlines)
-    print(headlines)
+    headlines.to_csv("tickers_scores.csv")
+
+    # uncomment this and comment all lines from scrape_data() function to find_gm_tickers() function in main() to use saved data
+    # headlines = pd.read_csv("tickers_scores.csv")
 
     headlines = get_isins(headlines)
-    print(headlines)
 
     print(f"The highest sentiment score is: {headlines['score'].max()}")
     print(f"The lowest sentiment score is {headlines['score'].min()}")
 
     orders = place_trades(headlines)
-    print(orders)
     activate_order(orders)
 
 
