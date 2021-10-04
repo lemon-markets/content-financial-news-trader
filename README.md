@@ -1,6 +1,6 @@
 # financial-news-trader
 
-Requires a .env file with the following variables (note: TOKEN_KEY does not need to be filled in) :
+Requires a .env file with the following variables (note: TOKEN_KEY does not need to be filled in) : /n
 MIC=XMUN
 TRADING_URL=https://paper-trading.lemon.markets/rest/v1/
 MARKET_URL=https://paper-data.lemon.markets/v1/
