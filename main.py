@@ -1,51 +1,23 @@
 from dotenv import load_dotenv
-import requests
+
 import pandas as pd
 import datetime
 import time
 
-from bs4 import BeautifulSoup
-from dateutil.parser import isoparse
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 from api.figi import FIGI
 from api.lemon import LemonMarketsAPI
+from api.marketwatch import MarketWatch
+
+# set options to display all columns and rows when printing dataframes
+pd.options.display.max_columns = None
+pd.options.display.max_rows = None
 
 load_dotenv()
 
 lemon_api = LemonMarketsAPI()
-
-
-def scrape_data(base_url: str, url_endpoints: list):
-    """Scrapes headline, ticker and date from articles as presented on MarketWatch"""
-    headlines = []
-
-    for url in url_endpoints:
-        page = requests.get(base_url + url)
-        soup = BeautifulSoup(page.content, "html.parser")
-        article_contents = soup.find_all("div", class_="article__content")
-
-        for article in article_contents:
-            # determine whether ticker present
-            ticker = article.find("span", class_="ticker__symbol")
-
-            # if ticker present in article, add both ticker and headline to list
-            if ticker is not None:
-                headline = article.find("a", class_="link").text.strip()
-                timestamp = article.find("span", class_="article__timestamp")
-                if timestamp is not None:
-                    time_stamp = isoparse(timestamp["data-est"])
-                # if no timestamp, assume current article and initialise timestamp to now
-                else:
-                    time_stamp = datetime.datetime.now()
-
-                head_and_tick = [headline, ticker.text, time_stamp]
-                headlines.append(head_and_tick)
-
-    columns = ["headline", "ticker", "timestamp"]
-    headlines_df = pd.DataFrame(headlines, columns=columns)
-    print(headlines_df.head())
-    return headlines_df
+market_watch = MarketWatch()
 
 
 def filter_dataframe(dataframe, removable_tickers: list):
@@ -203,34 +175,7 @@ def activate_order(orders):
 
 
 def main():
-    # set options to display all columns and rows when printing dataframes
-    pd.options.display.max_columns = None
-    pd.options.display.max_rows = None
-
-    # import data source
-    base_url = "https://www.marketwatch.com/investing/"
-    url_endpoints = [
-        "barrons",
-        "aerospace-defense",
-        "autos",
-        "biotech",
-        "energy",
-        "health-care",
-        "media",
-        "pharmaceutical",
-        "retail",
-        "telecommunications",
-        "airlines",
-        "banking",
-        "food-beverage",
-        "internet-online-services",
-        "metals-mining",
-        "real-estate-construction",
-        "software",
-        "technology",
-    ]
-
-    headlines = scrape_data(base_url, url_endpoints)
+    headlines = market_watch.get_headlines()
 
     # pre-emptively decide on some tickers to exclude to make dataset smaller
     removable_tickers = [
