@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import requests
 import pandas as pd
 import datetime
@@ -272,4 +273,5 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()
