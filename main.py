@@ -1,9 +1,6 @@
-from typing import List
-
 from dotenv import load_dotenv
 
 import pandas as pd
-import datetime
 
 from news_trader.handlers.figi import FIGI
 from news_trader.handlers.lemon import LemonMarketsAPI
@@ -11,6 +8,7 @@ from news_trader.handlers.marketwatch import MarketWatch
 
 # set options to display all columns and rows when printing dataframes
 from news_trader.headlines import HeadLines
+from news_trader.helpers import Helpers
 
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
@@ -37,81 +35,21 @@ REMOVABLE_TICKERS = [
 
 load_dotenv()
 
-lemon_api = LemonMarketsAPI()
-figi = FIGI()
-market_watch = MarketWatch()
-
-
-def get_isins(headlines: HeadLines):
-    isins = []
-
-    for ticker in headlines.get_gm_tickers():
-        if ticker == "NA":
-            isins.append("NA")
-
-        else:
-            try:
-                instrument = lemon_api.get_instrument(ticker)
-
-                if instrument.get("count") > 0:
-                    isins.append(instrument.get("results")[0].get("isin"))
-                else:
-                    isins.append("NA")
-
-            except Exception as e:
-                print(e)
-
-    headlines.set_isins(isins)
-
-
-def place_trades(buy: List[str], sell: List[str]):
-    orders = []
-
-    space_uuid = lemon_api.get_space_uuid()
-    valid_time = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
-
-    # place buy orders
-    for isin in buy:
-        side = "buy"
-        quantity = 1
-        order = lemon_api.place_order(isin, valid_time, quantity, side, space_uuid)
-        orders.append(order)
-        print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
-
-    portfolio = lemon_api.get_portfolio(space_uuid)
-
-    # place sell orders
-    for isin in sell:
-        if isin in portfolio:
-            side = "sell"
-            quantity = 1
-            order = lemon_api.place_order(isin, valid_time, quantity, side, space_uuid)
-            orders.append(order)
-            print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
-        else:
-            print(
-                f"You do not have sufficient holdings of instrument {isin} to place a sell order."
-            )
-
-    return orders
-
-
-def activate_order(orders):
-    for order in orders:
-        lemon_api.activate_order(order.get("uuid"), lemon_api.get_space_uuid())
-        print(f'Activated {order.get("isin")}')
-    return orders
-
 
 def main():
-    headlines: HeadLines = market_watch.get_headlines()
+    lemon_api: LemonMarketsAPI = LemonMarketsAPI()
+    figi_api: FIGI = FIGI()
+    market_watch_api: MarketWatch = MarketWatch()
+
+    headlines: HeadLines = market_watch_api.get_headlines()
+    helpers: Helpers = Helpers(lemon_api)
 
     headlines.remove_tickers(REMOVABLE_TICKERS)
     headlines.sentiment_analysis()
     headlines.aggregate_scores()
 
     tickers = headlines.get_tickers()
-    gm_tickers = figi.find_gm_tickers(tickers)
+    gm_tickers = figi_api.find_gm_tickers(tickers)
 
     headlines.set_gm_tickers(gm_tickers)
     headlines.raw_dataframe.to_csv("tickers_scores.csv")
@@ -119,14 +57,14 @@ def main():
     # uncomment this and comment all lines from scrape_data() function to find_gm_tickers() function in main() to use saved data
     # headlines = HeadLines(pd.read_csv("tickers_scores.csv"))
 
-    get_isins(headlines)
+    helpers.get_isins(headlines)
 
     print(f"The highest sentiment score is: {headlines.max_score}")
     print(f"The lowest sentiment score is {headlines.min_score}")
 
     buy, sell = headlines.get_trade_decisions()
-    orders = place_trades(buy, sell)
-    activate_order(orders)
+    orders = helpers.place_trades(buy, sell)
+    helpers.activate_order(orders)
 
 
 if __name__ == "__main__":
