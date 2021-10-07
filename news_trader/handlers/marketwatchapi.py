@@ -7,8 +7,9 @@ from bs4 import BeautifulSoup
 
 from news_trader.headlines import HeadLines
 
-base_url = "https://www.marketwatch.com/investing/"
-url_endpoints = [
+BASE_URL = "https://www.marketwatch.com/investing/"
+
+URL_ENDPOINTS = [
     "barrons",
     "aerospace-defense",
     "autos",
@@ -30,13 +31,13 @@ url_endpoints = [
 ]
 
 
-class MarketWatch:
+class MarketWatchAPI:
     def get_headlines(self) -> HeadLines:
         """Scrapes headline, ticker and date from articles as presented on MarketWatch"""
         headlines = []
 
-        for url in url_endpoints:
-            page = requests.get(base_url + url)
+        for url in URL_ENDPOINTS:
+            page = requests.get(BASE_URL + url)
             soup = BeautifulSoup(page.content, "html.parser")
             article_contents = soup.find_all("div", class_="article__content")
 

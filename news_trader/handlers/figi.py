@@ -5,7 +5,7 @@ from typing import List
 import requests
 
 
-class FIGI:
+class FigiAPI:
     def __init__(self):
         self._api_key = os.environ.get("OPENFIGI_KEY")
         self._url = os.environ.get("OPENFIGI_URL")

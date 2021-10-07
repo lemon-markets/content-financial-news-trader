@@ -5,13 +5,32 @@ import pandas as pd
 
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
+REMOVABLE_TICKERS = [
+    "SPX",
+    "DJIA",
+    "BTCUSD",
+    "",
+    "GCZ21",
+    "HK:3333",
+    "DX:DAX",
+    "XE:VOW",
+    "UK:AZN",
+    "GBPUSD",
+    "CA:WEED",
+    "UK:UKX",
+    "CA:ACB",
+    "CA:ACB",
+    "CA:CL",
+    "BX:TMUBMUSD10Y",
+]
+
 
 class HeadLines:
     def __init__(self, dataframe: pd.DataFrame):
         self._df = dataframe
 
-    def remove_tickers(self, removable_tickers: list):
-        self._df = self._df[~self._df.loc[:, "ticker"].isin(removable_tickers)].copy()
+        # pre-emptively decide on some tickers to exclude to make dataset smaller
+        self._df = self._df[~self._df.loc[:, "ticker"].isin(REMOVABLE_TICKERS)].copy()
         print(self._df.head())
 
     def sentiment_analysis(self):
