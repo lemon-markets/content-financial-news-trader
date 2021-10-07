@@ -64,26 +64,6 @@ def get_isins(headlines: HeadLines):
     headlines.set_isins(isins)
 
 
-def trade_decision(dataframe: pd.DataFrame):
-    buy = []
-    sell = []
-    for index, row in dataframe.iterrows():
-        # if sentiment higher than 0.5 and ISIN present, place ISIN in buy list
-        if row["score"] > 0.5 and row["isin"] != "NA":
-            print(
-                f'Buy {row["ticker"]} ({row["isin"]}) with sentiment score {row["score"]}.'
-            )
-            buy.append(row["isin"])
-        # if sentiment lower than -0.5 and ISIN present, place ISIN in sell list
-        if row["score"] < -0.5 and row["isin"] != "NA":
-            print(
-                f'Sell {row["ticker"]} ({row["isin"]}) with sentiment score {row["score"]}.'
-            )
-            sell.append(row["isin"])
-
-    return buy, sell
-
-
 def place_trades(buy: List[str], sell: List[str]):
     orders = []
 
@@ -134,7 +114,7 @@ def main():
     gm_tickers = figi.find_gm_tickers(tickers)
 
     headlines.set_gm_tickers(gm_tickers)
-    headlines.save()
+    headlines.raw_dataframe.to_csv("tickers_scores.csv")
 
     # uncomment this and comment all lines from scrape_data() function to find_gm_tickers() function in main() to use saved data
     # headlines = HeadLines(pd.read_csv("tickers_scores.csv"))

@@ -5,15 +5,10 @@ import pandas as pd
 
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-from news_trader.handlers.figi import FIGI
-from news_trader.handlers.lemon import LemonMarketsAPI
-
 
 class HeadLines:
     def __init__(self, dataframe: pd.DataFrame):
         self._df = dataframe
-        self._figi_api = FIGI()
-        self._lemon_api = LemonMarketsAPI()
 
     def remove_tickers(self, removable_tickers: list):
         self._df = self._df[~self._df.loc[:, "ticker"].isin(removable_tickers)].copy()
@@ -68,9 +63,6 @@ class HeadLines:
                 sell.append(row["isin"])
 
         return buy, sell
-
-    def save(self, filename="tickers_scores.csv"):
-        self._df.to_csv(filename)
 
     @property
     def max_score(self):
