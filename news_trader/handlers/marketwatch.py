@@ -5,6 +5,8 @@ import pandas as pd
 from dateutil.parser import isoparse
 from bs4 import BeautifulSoup
 
+from news_trader.headlines import HeadLines
+
 base_url = "https://www.marketwatch.com/investing/"
 url_endpoints = [
     "barrons",
@@ -29,7 +31,7 @@ url_endpoints = [
 
 
 class MarketWatch:
-    def get_headlines(self) -> pd.DataFrame:
+    def get_headlines(self) -> HeadLines:
         """Scrapes headline, ticker and date from articles as presented on MarketWatch"""
         headlines = []
 
@@ -59,4 +61,4 @@ class MarketWatch:
         headlines_df = pd.DataFrame(headlines, columns=columns)
         print(headlines_df.head())
 
-        return headlines_df
+        return HeadLines(headlines_df)

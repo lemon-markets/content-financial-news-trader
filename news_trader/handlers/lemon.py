@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import requests
 
@@ -85,3 +86,23 @@ class LemonMarketsAPI:
         self._handler.token = response.json().get("access_token", None)
 
         return self._handler.token
+
+    def get_isins(self, gm_tickers: List[str]) -> List[str]:
+        isins = []
+
+        for ticker in gm_tickers:
+            if ticker == "NA":
+                isins.append("NA")
+                continue
+
+            try:
+                instrument = self.get_instrument(ticker)
+            except Exception as e:
+                print(e)
+            else:
+                if instrument.get("count") > 0:
+                    isins.append(instrument.get("results")[0].get("isin"))
+                else:
+                    isins.append("NA")
+
+        return isins

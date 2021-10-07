@@ -17,6 +17,7 @@ pd.options.display.max_rows = None
 load_dotenv()
 
 lemon_api = LemonMarketsAPI()
+figi = FIGI()
 market_watch = MarketWatch()
 
 
@@ -197,18 +198,30 @@ def main():
         "BX:TMUBMUSD10Y",
     ]
 
-    headlines = filter_dataframe(headlines, removable_tickers)
-    headlines = sentiment_analysis(headlines)
-    headlines = aggregate_scores(headlines)
-    headlines = find_gm_tickers(headlines)
-    headlines.to_csv("tickers_scores.csv")
+    headlines.remove_tickers(removable_tickers)
+    headlines.sentiment_analysis()
+    headlines.aggregate_scores()
+
+    tickers = headlines.get_tickers()
+    headlines.set_gm_tickers(figi.find_gm_tickers(tickers))
+
+    headlines.save()
+
+    # headlines = filter_dataframe(headlines, removable_tickers)
+    # headlines = sentiment_analysis(headlines)
+    # headlines = aggregate_scores(headlines)
+    # headlines = find_gm_tickers(headlines)
+    # headlines.to_csv("tickers_scores.csv")
 
     lemon_api.get_new_token()
 
     # uncomment this and comment all lines from scrape_data() function to find_gm_tickers() function in main() to use saved data
     # headlines = pd.read_csv("tickers_scores.csv")
 
-    headlines = get_isins(headlines)
+    isins = lemon_api.get_isins(headlines.get_gm_tickers())
+    headlines.set_isins(isins)
+
+    # headlines = get_isins(headlines)
 
     print(f"The highest sentiment score is: {headlines['score'].max()}")
     print(f"The lowest sentiment score is {headlines['score'].min()}")
