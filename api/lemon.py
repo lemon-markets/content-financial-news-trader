@@ -5,7 +5,7 @@ import requests
 
 class RequestHandler:
     def __init__(self):
-        self.headers = {"Authorization": f"Bearer " + os.getenv("TOKEN_KEY")}
+        self.token = os.getenv("TOKEN_KEY")
         self.auth_url: str = os.environ.get("AUTH_URL")
         self.url_trading: str = os.environ.get("TRADING_URL")
         self.url_market: str = os.environ.get("MARKET_URL")
@@ -31,6 +31,10 @@ class RequestHandler:
             self.url_trading + endpoint, data, headers=self.headers
         )
         return response.json()
+
+    @property
+    def headers(self):
+        return {"Authorization": f"Bearer {self.token}"}
 
 
 class LemonMarketsAPI:
@@ -78,65 +82,6 @@ class LemonMarketsAPI:
 
         endpoint = "oauth2/token"
         response = self._handler.get_token(endpoint, token_details)
-        os.environ["TOKEN_KEY"] = response.json().get("access_token", None)
+        self._handler.token = response.json().get("access_token", None)
 
-        return os.environ["TOKEN_KEY"]
-
-
-#
-#
-# class Instrument(RequestHandler):
-#     def get_instrument(self, query: str):
-#         endpoint = f"instruments/?search={query}&type=stock"
-#         response = self.get_data_market(endpoint)
-#         return response
-#
-#
-# class Order(RequestHandler):
-#     def place_order(
-#             self, isin: str, valid_until: float, quantity: int, side: str,
-#             space_uuid: str
-#     ):
-#         order_details = {
-#             "isin": isin,
-#             "valid_until": valid_until,
-#             "side": side,
-#             "quantity": quantity,
-#         }
-#         endpoint = f"spaces/{space_uuid}/orders/"
-#         response = self.post_data(endpoint, order_details)
-#         return response
-#
-#     def activate_order(self, order_uuid: str, space_uuid: str):
-#         endpoint = f"spaces/{space_uuid}/orders/{order_uuid}/activate/"
-#         response = self.put_data(endpoint)
-#         return response
-#
-#
-# class Portfolio(RequestHandler):
-#     def get_portfolio(self, space_uuid) -> list:
-#         endpoint = f"spaces/{space_uuid}/portfolio/"
-#         response = self.get_data_trading(endpoint)
-#         return response["results"]
-#
-#
-# class Space(RequestHandler):
-#     def get_space_uuid(self):
-#         endpoint = f"spaces"
-#         response = self.get_data_trading(endpoint)["results"]
-#         return response[0]["uuid"]
-#
-#
-# class Token(RequestHandler):
-#     def get_new_token(self):
-#         token_details = {
-#             "client_id": os.getenv("CLIENT_ID"),
-#             "client_secret": os.getenv("CLIENT_SECRET"),
-#             "grant_type": "client_credentials",
-#         }
-#
-#         endpoint = "oauth2/token"
-#         response = self.get_token(endpoint, token_details)
-#         os.environ["TOKEN_KEY"] = response.json().get("access_token", None)
-#
-#         return os.environ["TOKEN_KEY"]
+        return self._handler.token

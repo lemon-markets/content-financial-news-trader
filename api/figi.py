@@ -18,6 +18,6 @@ class FIGI:
         )
 
         if response.status_code != 200:
-            raise Exception("Bad response code {}".format(str(response.status_code)))
+            raise Exception(f"Bad response code {response.status_code}")
 
         return response.json()

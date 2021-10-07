@@ -8,8 +8,8 @@ from bs4 import BeautifulSoup
 from dateutil.parser import isoparse
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-from news_trader.handlers.figi import FIGI
-from news_trader.handlers.lemon import LemonMarketsAPI
+from api.figi import FIGI
+from api.lemon import LemonMarketsAPI
 
 load_dotenv()
 
