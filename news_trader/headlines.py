@@ -13,7 +13,6 @@ class HeadLines:
     def remove_tickers(self, removable_tickers: list):
         self._df = self._df[~self._df.loc[:, "ticker"].isin(removable_tickers)].copy()
         print(self._df.head())
-        self._df = self._df.iloc[:4, :]
 
     def sentiment_analysis(self):
         scores = []
