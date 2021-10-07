@@ -15,19 +15,17 @@ class Helpers:
         for ticker in headlines.get_gm_tickers():
             if ticker == "NA":
                 isins.append("NA")
-
             else:
                 try:
                     instrument = self._lemon_api.get_instrument(ticker)
-
+                except Exception as e:
+                    print(e)
+                    raise
+                else:
                     if instrument.get("count") > 0:
                         isins.append(instrument.get("results")[0].get("isin"))
                     else:
                         isins.append("NA")
-
-                except Exception as e:
-                    print(e)
-
         headlines.set_isins(isins)
 
     def place_trades(self, buy: List[str], sell: List[str]):

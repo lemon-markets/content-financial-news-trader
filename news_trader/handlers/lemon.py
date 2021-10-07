@@ -5,8 +5,8 @@ import requests
 
 
 class RequestHandler:
-    def __init__(self, token):
-        self.token = token or os.environ.get("TOKEN_KEY")
+    def __init__(self, token=None):
+        self.token = token
         self.auth_url: str = os.environ.get("AUTH_URL")
         self.url_trading: str = os.environ.get("TRADING_URL")
         self.url_market: str = os.environ.get("MARKET_URL")
@@ -68,13 +68,14 @@ class LemonMarketsAPI:
 
     @cached_property
     def handler(self):
+        handler_ = RequestHandler()
         token_details = {
             "client_id": os.getenv("CLIENT_ID"),
             "client_secret": os.getenv("CLIENT_SECRET"),
             "grant_type": "client_credentials",
         }
 
-        response = self.handler.get_token("oauth2/token", token_details)
-        token = response.json().get("access_token", None)
+        response = handler_.get_token("oauth2/token", token_details)
+        handler_.token = response.json().get("access_token", None)
 
-        return RequestHandler(token)
+        return handler_

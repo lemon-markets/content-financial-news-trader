@@ -49,6 +49,7 @@ def main():
     headlines.aggregate_scores()
 
     tickers = headlines.get_tickers()
+
     gm_tickers = figi_api.find_gm_tickers(tickers)
 
     headlines.set_gm_tickers(gm_tickers)
@@ -56,7 +57,6 @@ def main():
 
     # uncomment this and comment all lines from scrape_data() function to find_gm_tickers() function in main() to use saved data
     # headlines = HeadLines(pd.read_csv("tickers_scores.csv"))
-
     helpers.get_isins(headlines)
 
     print(f"The highest sentiment score is: {headlines.max_score}")
