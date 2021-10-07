@@ -11,6 +11,8 @@ from news_trader.handlers.lemon import LemonMarketsAPI
 from news_trader.handlers.marketwatch import MarketWatch
 
 # set options to display all columns and rows when printing dataframes
+from news_trader.headlines import HeadLines
+
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
 
@@ -176,7 +178,7 @@ def activate_order(orders):
 
 
 def main():
-    headlines = market_watch.get_headlines()
+    headlines: HeadLines = market_watch.get_headlines()
 
     # pre-emptively decide on some tickers to exclude to make dataset smaller
     removable_tickers = [
@@ -213,18 +215,16 @@ def main():
     # headlines = find_gm_tickers(headlines)
     # headlines.to_csv("tickers_scores.csv")
 
-    lemon_api.get_new_token()
-
     # uncomment this and comment all lines from scrape_data() function to find_gm_tickers() function in main() to use saved data
     # headlines = pd.read_csv("tickers_scores.csv")
 
-    isins = lemon_api.get_isins(headlines.get_gm_tickers())
+    isins = lemon_api.get_isins_by_gm_tickers(headlines.get_gm_tickers())
     headlines.set_isins(isins)
 
     # headlines = get_isins(headlines)
 
-    print(f"The highest sentiment score is: {headlines['score'].max()}")
-    print(f"The lowest sentiment score is {headlines['score'].min()}")
+    print(f"The highest sentiment score is: {headlines.max_score}")
+    print(f"The lowest sentiment score is {headlines.min_score}")
 
     orders = place_trades(headlines)
     activate_order(orders)

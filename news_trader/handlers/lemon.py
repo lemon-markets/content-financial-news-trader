@@ -1,12 +1,13 @@
 import os
+from functools import cached_property
 from typing import List
 
 import requests
 
 
 class RequestHandler:
-    def __init__(self):
-        self.token = os.getenv("TOKEN_KEY")
+    def __init__(self, token):
+        self.token = token or os.environ.get("TOKEN_KEY")
         self.auth_url: str = os.environ.get("AUTH_URL")
         self.url_trading: str = os.environ.get("TRADING_URL")
         self.url_market: str = os.environ.get("MARKET_URL")
@@ -39,12 +40,8 @@ class RequestHandler:
 
 
 class LemonMarketsAPI:
-    def __init__(self):
-        self._handler = RequestHandler()
-
     def get_instrument(self, query: str):
-        endpoint = f"instruments/?search={query}&type=stock"
-        return self._handler.get_data_market(endpoint)
+        return self.handler.get_data_market(f"instruments/?search={query}&type=stock")
 
     def place_order(
         self, isin: str, valid_until: float, quantity: int, side: str, space_uuid: str
@@ -55,39 +52,35 @@ class LemonMarketsAPI:
             "side": side,
             "quantity": quantity,
         }
-        endpoint = f"spaces/{space_uuid}/orders/"
-        response = self._handler.post_data(endpoint, order_details)
-        return response
+        return self.handler.post_data(f"spaces/{space_uuid}/orders/", order_details)
 
     def activate_order(self, order_uuid: str, space_uuid: str):
-        endpoint = f"spaces/{space_uuid}/orders/{order_uuid}/activate/"
-        response = self._handler.put_data(endpoint)
-        return response
+        return self.handler.put_data(
+            f"spaces/{space_uuid}/orders/{order_uuid}/activate/"
+        )
 
     def get_portfolio(self, space_uuid) -> list:
-        endpoint = f"spaces/{space_uuid}/portfolio/"
-        response = self._handler.get_data_trading(endpoint)
-        return response["results"]
+        return self.handler.get_data_trading(f"spaces/{space_uuid}/portfolio/")[
+            "results"
+        ]
 
     def get_space_uuid(self):
-        endpoint = f"spaces"
-        response = self._handler.get_data_trading(endpoint)["results"]
-        return response[0]["uuid"]
+        return self.handler.get_data_trading("spaces")["results"][0]["uuid"]
 
-    def get_new_token(self):
+    @cached_property
+    def handler(self):
         token_details = {
             "client_id": os.getenv("CLIENT_ID"),
             "client_secret": os.getenv("CLIENT_SECRET"),
             "grant_type": "client_credentials",
         }
 
-        endpoint = "oauth2/token"
-        response = self._handler.get_token(endpoint, token_details)
-        self._handler.token = response.json().get("access_token", None)
+        response = self.handler.get_token("oauth2/token", token_details)
+        token = response.json().get("access_token", None)
 
-        return self._handler.token
+        return RequestHandler(token)
 
-    def get_isins(self, gm_tickers: List[str]) -> List[str]:
+    def get_isins_by_gm_tickers(self, gm_tickers: List[str]) -> List[str]:
         isins = []
 
         for ticker in gm_tickers:
@@ -100,9 +93,10 @@ class LemonMarketsAPI:
             except Exception as e:
                 print(e)
             else:
-                if instrument.get("count") > 0:
-                    isins.append(instrument.get("results")[0].get("isin"))
-                else:
-                    isins.append("NA")
+                isin = "NA"
+                if instrument["count"] > 0:
+                    isin = instrument["results"][0]["isin"]
+
+                isins.append(isin)
 
         return isins
