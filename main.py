@@ -6,9 +6,9 @@ import time
 
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-from api.figi import FIGI
-from api.lemon import LemonMarketsAPI
-from api.marketwatch import MarketWatch
+from news_trader.handlers.figi import FIGI
+from news_trader.handlers.lemon import LemonMarketsAPI
+from news_trader.handlers.marketwatch import MarketWatch
 
 # set options to display all columns and rows when printing dataframes
 pd.options.display.max_columns = None
@@ -28,7 +28,7 @@ def filter_dataframe(dataframe, removable_tickers: list):
     return filtered_dataframe
 
 
-def sentiment_analysis(dataframe):
+def sentiment_analysis(dataframe: pd.DataFrame):
     # initialise VADER
     try:
         vader = SentimentIntensityAnalyzer()
@@ -51,14 +51,14 @@ def sentiment_analysis(dataframe):
     return dataframe
 
 
-def aggregate_scores(dataframe):
+def aggregate_scores(dataframe: pd.DataFrame):
     grouped_tickers = dataframe.groupby("ticker").mean()
     grouped_tickers.reset_index(level=0, inplace=True)
     print(grouped_tickers.head())
     return grouped_tickers
 
 
-def find_gm_tickers(dataframe):
+def find_gm_tickers(dataframe: pd.DataFrame):
     print("Collecting tickers...")
 
     gm_tickers = []
@@ -89,7 +89,7 @@ def find_gm_tickers(dataframe):
     return dataframe
 
 
-def get_isins(dataframe):
+def get_isins(dataframe: pd.DataFrame):
     isins = []
 
     for ticker in dataframe.loc[:, "gm_ticker"]:
@@ -113,7 +113,7 @@ def get_isins(dataframe):
     return dataframe
 
 
-def trade_decision(dataframe):
+def trade_decision(dataframe: pd.DataFrame):
     buy = []
     sell = []
     for index, row in dataframe.iterrows():
@@ -133,7 +133,7 @@ def trade_decision(dataframe):
     return buy, sell
 
 
-def place_trades(dataframe):
+def place_trades(dataframe: pd.DataFrame):
     buy, sell = trade_decision(dataframe)
 
     orders = []
