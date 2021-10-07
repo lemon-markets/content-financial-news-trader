@@ -1,10 +1,9 @@
+from typing import List
+
 from dotenv import load_dotenv
 
 import pandas as pd
 import datetime
-import time
-
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 from news_trader.handlers.figi import FIGI
 from news_trader.handlers.lemon import LemonMarketsAPI
@@ -16,6 +15,26 @@ from news_trader.headlines import HeadLines
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
 
+# pre-emptively decide on some tickers to exclude to make dataset smaller
+REMOVABLE_TICKERS = [
+    "SPX",
+    "DJIA",
+    "BTCUSD",
+    "",
+    "GCZ21",
+    "HK:3333",
+    "DX:DAX",
+    "XE:VOW",
+    "UK:AZN",
+    "GBPUSD",
+    "CA:WEED",
+    "UK:UKX",
+    "CA:ACB",
+    "CA:ACB",
+    "CA:CL",
+    "BX:TMUBMUSD10Y",
+]
+
 load_dotenv()
 
 lemon_api = LemonMarketsAPI()
@@ -23,79 +42,10 @@ figi = FIGI()
 market_watch = MarketWatch()
 
 
-def filter_dataframe(dataframe, removable_tickers: list):
-    filtered_dataframe = dataframe[
-        ~dataframe.loc[:, "ticker"].isin(removable_tickers)
-    ].copy()
-    print(filtered_dataframe.head())
-    return filtered_dataframe
-
-
-def sentiment_analysis(dataframe: pd.DataFrame):
-    # initialise VADER
-    try:
-        vader = SentimentIntensityAnalyzer()
-    except LookupError:
-        import nltk
-
-        nltk.download("vader_lexicon")
-        vader = SentimentIntensityAnalyzer()
-
-    scores = []
-
-    # perform sentiment analysis
-    for headline in dataframe.loc[:, "headline"]:
-        score = vader.polarity_scores(headline).get("compound")
-        scores.append(score)
-
-    # append scores to DataFrame
-    dataframe.loc[:, "score"] = scores
-    print(dataframe.head())
-    return dataframe
-
-
-def aggregate_scores(dataframe: pd.DataFrame):
-    grouped_tickers = dataframe.groupby("ticker").mean()
-    grouped_tickers.reset_index(level=0, inplace=True)
-    print(grouped_tickers.head())
-    return grouped_tickers
-
-
-def find_gm_tickers(dataframe: pd.DataFrame):
-    print("Collecting tickers...")
-
-    gm_tickers = []
-    iteration = 1
-
-    for ticker in dataframe.loc[:, "ticker"]:
-        job = {"query": ticker, "exchCode": "GM"}
-        gm_ticker = FIGI().search_jobs(job)
-
-        # if instrument listed on GM, then collect ticker
-        if gm_ticker.get("data"):
-            result = gm_ticker.get("data")[0].get("ticker")
-        else:
-            result = "NA"
-
-        print(f"{ticker} is {result}")
-        gm_tickers.append(result)
-        iteration += 1
-
-        # OpenFIGI allows 20 requests per minute, thus sleep for 60 seconds after every 20 requests
-        if iteration % 20 == 0:
-            print("Sleeping for 60 seconds...")
-            time.sleep(60)
-
-    dataframe.loc[:, "gm_ticker"] = gm_tickers
-    print(dataframe.head())
-
-    return dataframe
-
-
-def get_isins(dataframe: pd.DataFrame):
+def get_isins(headlines: HeadLines):
     isins = []
 
-    for ticker in dataframe.loc[:, "gm_ticker"]:
+    for ticker in headlines.get_gm_tickers():
         if ticker == "NA":
             isins.append("NA")
 
@@ -111,9 +61,7 @@ def get_isins(dataframe: pd.DataFrame):
             except Exception as e:
                 print(e)
 
-    dataframe.loc[:, "isin"] = isins
-    print(dataframe)
-    return dataframe
+    headlines.set_isins(isins)
 
 
 def trade_decision(dataframe: pd.DataFrame):
@@ -136,9 +84,7 @@ def trade_decision(dataframe: pd.DataFrame):
     return buy, sell
 
 
-def place_trades(dataframe: pd.DataFrame):
-    buy, sell = trade_decision(dataframe)
-
+def place_trades(buy: List[str], sell: List[str]):
     orders = []
 
     space_uuid = lemon_api.get_space_uuid()
@@ -180,53 +126,26 @@ def activate_order(orders):
 def main():
     headlines: HeadLines = market_watch.get_headlines()
 
-    # pre-emptively decide on some tickers to exclude to make dataset smaller
-    removable_tickers = [
-        "SPX",
-        "DJIA",
-        "BTCUSD",
-        "",
-        "GCZ21",
-        "HK:3333",
-        "DX:DAX",
-        "XE:VOW",
-        "UK:AZN",
-        "GBPUSD",
-        "CA:WEED",
-        "UK:UKX",
-        "CA:ACB",
-        "CA:ACB",
-        "CA:CL",
-        "BX:TMUBMUSD10Y",
-    ]
-
-    headlines.remove_tickers(removable_tickers)
+    headlines.remove_tickers(REMOVABLE_TICKERS)
     headlines.sentiment_analysis()
     headlines.aggregate_scores()
 
     tickers = headlines.get_tickers()
-    headlines.set_gm_tickers(figi.find_gm_tickers(tickers))
+    gm_tickers = figi.find_gm_tickers(tickers)
 
+    headlines.set_gm_tickers(gm_tickers)
     headlines.save()
 
-    # headlines = filter_dataframe(headlines, removable_tickers)
-    # headlines = sentiment_analysis(headlines)
-    # headlines = aggregate_scores(headlines)
-    # headlines = find_gm_tickers(headlines)
-    # headlines.to_csv("tickers_scores.csv")
-
     # uncomment this and comment all lines from scrape_data() function to find_gm_tickers() function in main() to use saved data
-    # headlines = pd.read_csv("tickers_scores.csv")
+    # headlines = HeadLines(pd.read_csv("tickers_scores.csv"))
 
-    isins = lemon_api.get_isins_by_gm_tickers(headlines.get_gm_tickers())
-    headlines.set_isins(isins)
-
-    # headlines = get_isins(headlines)
+    get_isins(headlines)
 
     print(f"The highest sentiment score is: {headlines.max_score}")
     print(f"The lowest sentiment score is {headlines.min_score}")
 
-    orders = place_trades(headlines)
+    buy, sell = headlines.get_trade_decisions()
+    orders = place_trades(buy, sell)
     activate_order(orders)
 
 

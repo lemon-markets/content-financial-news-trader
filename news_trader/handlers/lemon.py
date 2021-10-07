@@ -1,6 +1,5 @@
 import os
 from functools import cached_property
-from typing import List
 
 import requests
 
@@ -79,24 +78,3 @@ class LemonMarketsAPI:
         token = response.json().get("access_token", None)
 
         return RequestHandler(token)
-
-    def get_isins_by_gm_tickers(self, gm_tickers: List[str]) -> List[str]:
-        isins = []
-
-        for ticker in gm_tickers:
-            if ticker == "NA":
-                isins.append("NA")
-                continue
-
-            try:
-                instrument = self.get_instrument(ticker)
-            except Exception as e:
-                print(e)
-            else:
-                isin = "NA"
-                if instrument["count"] > 0:
-                    isin = instrument["results"][0]["isin"]
-
-                isins.append(isin)
-
-        return isins

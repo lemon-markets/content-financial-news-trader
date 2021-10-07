@@ -50,6 +50,25 @@ class HeadLines:
         self._df.loc[:, "isin"] = isins
         print(self._df)
 
+    def get_trade_decisions(self):
+        buy = []
+        sell = []
+        for index, row in self._df.iterrows():
+            # if sentiment higher than 0.5 and ISIN present, place ISIN in buy list
+            if row["score"] > 0.5 and row["isin"] != "NA":
+                print(
+                    f'Buy {row["ticker"]} ({row["isin"]}) with sentiment score {row["score"]}.'
+                )
+                buy.append(row["isin"])
+            # if sentiment lower than -0.5 and ISIN present, place ISIN in sell list
+            if row["score"] < -0.5 and row["isin"] != "NA":
+                print(
+                    f'Sell {row["ticker"]} ({row["isin"]}) with sentiment score {row["score"]}.'
+                )
+                sell.append(row["isin"])
+
+        return buy, sell
+
     def save(self, filename="tickers_scores.csv"):
         self._df.to_csv(filename)
 
@@ -71,3 +90,7 @@ class HeadLines:
 
             nltk.download("vader_lexicon")
             return SentimentIntensityAnalyzer()
+
+    @property
+    def raw_dataframe(self) -> pd.DataFrame:
+        return self._df
