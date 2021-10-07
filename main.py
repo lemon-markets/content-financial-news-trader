@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 
 from news_trader.handlers.figi import FigiAPI
 from news_trader.handlers.lemon import LemonMarketsAPI
-from news_trader.handlers.marketwatchapi import MarketWatchAPI
+from news_trader.handlers.marketwatch import MarketWatchAPI
 
 from news_trader.headlines import HeadLines
 from news_trader.helpers import Helpers
