@@ -8,12 +8,12 @@ from bs4 import BeautifulSoup
 from dateutil.parser import isoparse
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-from models.figi import FIGI
-from models.instrument import Instrument
-from models.space import Space
-from models.portfolio import Portfolio
-from models.order import Order
-from models.token import Token
+from news_trader.handlers.figi import FIGI
+from news_trader.handlers.lemon import LemonMarketsAPI
+
+load_dotenv()
+
+lemon_api = LemonMarketsAPI()
 
 
 def scrape_data(base_url: str, url_endpoints: list):
@@ -126,7 +126,7 @@ def get_isins(dataframe):
 
         else:
             try:
-                instrument = Instrument().get_instrument(ticker)
+                instrument = lemon_api.get_instrument(ticker)
 
                 if instrument.get("count") > 0:
                     isins.append(instrument.get("results")[0].get("isin"))
@@ -166,25 +166,25 @@ def place_trades(dataframe):
 
     orders = []
 
-    space_uuid = Space().get_space_uuid()
+    space_uuid = lemon_api.get_space_uuid()
     valid_time = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
 
     # place buy orders
     for isin in buy:
         side = "buy"
         quantity = 1
-        order = Order().place_order(isin, valid_time, quantity, side, space_uuid)
+        order = lemon_api.place_order(isin, valid_time, quantity, side, space_uuid)
         orders.append(order)
         print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
 
-    portfolio = Portfolio().get_portfolio(space_uuid)
+    portfolio = lemon_api.get_portfolio(space_uuid)
 
     # place sell orders
     for isin in sell:
         if isin in portfolio:
             side = "sell"
             quantity = 1
-            order = Order().place_order(isin, valid_time, quantity, side, space_uuid)
+            order = lemon_api.place_order(isin, valid_time, quantity, side, space_uuid)
             orders.append(order)
             print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
         else:
@@ -197,7 +197,7 @@ def place_trades(dataframe):
 
 def activate_order(orders):
     for order in orders:
-        Order().activate_order(order.get("uuid"), Space().get_space_uuid())
+        lemon_api.activate_order(order.get("uuid"), lemon_api.get_space_uuid())
         print(f'Activated {order.get("isin")}')
     return orders
 
@@ -258,7 +258,7 @@ def main():
     headlines = find_gm_tickers(headlines)
     headlines.to_csv("tickers_scores.csv")
 
-    Token().get_new_token()
+    lemon_api.get_new_token()
 
     # uncomment this and comment all lines from scrape_data() function to find_gm_tickers() function in main() to use saved data
     # headlines = pd.read_csv("tickers_scores.csv")
@@ -273,5 +273,4 @@ def main():
 
 
 if __name__ == "__main__":
-    load_dotenv()
     main()
