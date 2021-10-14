@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+#from datetime import datetime, timedelta
+import datetime
 from typing import List
 
 from news_trader.handlers.lemon import LemonMarketsAPI
@@ -32,7 +33,7 @@ class Helpers:
         orders = []
 
         space_uuid = self._lemon_api.get_space_uuid()
-        valid_time = (datetime.now() + timedelta(hours=1)).timestamp()
+        valid_time = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
 
         # place buy orders
         for isin in buy:
@@ -69,3 +70,28 @@ class Helpers:
             self._lemon_api.activate_order(order.get("uuid"), space_id)
             print(f'Activated {order.get("isin")}')
         return orders
+
+    def is_venue_open(self):
+        return self._lemon_api.get_venue()["is_open"]
+
+    def seconds_until_open(self):
+        venue = self._lemon_api.get_venue()
+        today = datetime.datetime.today()
+        next_opening_time = datetime.datetime.strptime(venue["opening_hours"]["start"], "%H:%M")
+        next_opening_day = datetime.datetime.strptime(venue["opening_days"][0], "%Y-%m-%d")
+
+        date_difference = next_opening_day - today
+        days = date_difference.days + 1
+        if not self.is_venue_open():
+            print("Trading venue is not open")
+            time_delta = datetime.datetime.combine(
+                datetime.datetime.now().date() + datetime.timedelta(days=1), next_opening_time.time()
+            ) - datetime.datetime.now()
+            print(time_delta.seconds + (days * 86400))
+            return time_delta.seconds
+        else:
+            print("Trading venue is open")
+            return 0
+
+
+

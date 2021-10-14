@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+import time
 
 from news_trader.handlers.figi import FigiAPI
 from news_trader.handlers.lemon import LemonMarketsAPI
@@ -10,7 +11,7 @@ from news_trader.helpers import Helpers
 load_dotenv()
 
 
-def main():
+def sentiment_analysis():
     lemon_api: LemonMarketsAPI = LemonMarketsAPI()
     figi_api: FigiAPI = FigiAPI()
     market_watch_api: MarketWatchAPI = MarketWatchAPI()
@@ -40,6 +41,20 @@ def main():
     orders = helpers.place_trades(buy, sell)
     helpers.activate_order(orders)
 
+    # sleep for 3 days
+    time.sleep(259200)
+
+
+def perform_sentiment_analysis():
+    lemon_api: LemonMarketsAPI = LemonMarketsAPI()
+    helpers: Helpers = Helpers(lemon_api)
+
+    while True:
+        if helpers.is_venue_open():
+            sentiment_analysis()
+        else:
+            time.sleep(helpers.seconds_until_open())
+
 
 if __name__ == "__main__":
-    main()
+    perform_sentiment_analysis()

@@ -66,6 +66,9 @@ class LemonMarketsAPI:
     def get_space_uuid(self):
         return self.handler.get_data_trading("spaces")["results"][0]["uuid"]
 
+    def get_venue(self):
+        return self.handler.get_data_market("venues/")["results"][0]
+
     @cached_property
     def handler(self):
         handler_ = RequestHandler()
