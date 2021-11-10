@@ -8,6 +8,16 @@ This is a public [lemon.markets](https://lemon.markets) repository that outlines
 
 A walk-through of this script can be found in [this blog-post]().
 
+## 🏃‍♂️ Quick Start
+Not interested in reading a novella before you get started? We get it! To get this project up and running quickly, here's what you need to do:
+1. Clone this repository;
+2. Sign up to [lemon.markets](https://www.lemon.markets/) and [OpenFIGI](https://www.openfigi.com/user/signup);
+3. Configure your environment variables as outlined in the 'Configuration' section;
+4. Modify the trade logic in the `headlines.py` file;
+5. Update list of tickers you wish to ignore in the `headlines.py` file;
+6. Update the parameters (e.g. `quantity`) in the `helpers.py` file;
+7. Run the script & make money (hopefully 😉).
+
 ## 😊😢 Sentiment Analysis?!
 'Sentiment' is a view or opinion about a particular topic - if we analyse the sentiment expressed in a news article about a financial instrument, we want to determine whether it is positive or negative. For example, the headline "Pelaton Earnings Disappointed. Another Pandemic Play Sinks." (real headline collected on 05-11-2021) clearly tells us that a long position in Pelaton probably isn't a good move. We can make this kind of judgement based off of the words 'disappointed' and 'sinks'. However, we'd like to automate this process, so we're going to use [VADER](https://medium.com/analytics-vidhya/simplifying-social-media-sentiment-analysis-using-vader-in-python-f9e6ec6fc52f), which is a lexicon of words along with their 'sentiment scores'. A headline will be analysed based on its polarity (postivie or negative) and intensity of emotion, which results in a score between -1 (very negative) and +1 (very positive). We can then make trade decisions based on these scores.
 
