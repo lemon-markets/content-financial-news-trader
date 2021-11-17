@@ -35,13 +35,14 @@ The script uses several environment variables, configure your .env file as follo
 
 ```python
 MIC=XMUN
-TRADING_URL=https://paper-trading.lemon.markets/rest/v1/
+TRADING_URL=https://paper-trading.lemon.markets/v1/
 MARKET_URL=https://data.lemon.markets/v1/
 API_KEY=<your-api-key>
+SPACE_ID=<your-space-id>
 OPENFIGI_URL=https://api.openfigi.com/v3/search/
 OPENFIGI_KEY=<your-openfigi-key>
 ```
-Please provide your unique `CLIENT_ID`, `CLIENT_SECRET`, and `OPENFIGI_KEY`. Note that the script automatically populates the `TOKEN_KEY` environment variable, therefore this one does not need to be filled in. 
+Please provide your unique `API_KEY`,`SPACE_ID` and `OPENFIGI_KEY`.
 
 ## ❓ What's happening under the hood?
 ### 📊 Collecting Data
