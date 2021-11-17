@@ -64,17 +64,3 @@ class LemonMarketsAPI(RequestHandler):
 
     def get_venue(self):
         return self.get_data_market("venues/")["results"][0]
-
-    # @cached_property
-    # def handler(self):
-    #     handler_ = RequestHandler()
-    #     token_details = {
-    #         "client_id": os.getenv("CLIENT_ID"),
-    #         "client_secret": os.getenv("CLIENT_SECRET"),
-    #         "grant_type": "client_credentials",
-    #     }
-    #
-    #     response = handler_.get_token("oauth2/token", token_details)
-    #     handler_.token = response.json().get("access_token", None)
-    #
-    #     return handler_

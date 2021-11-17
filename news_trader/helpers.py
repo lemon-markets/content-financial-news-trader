@@ -67,7 +67,6 @@ class Helpers:
 
     def activate_order(self, orders):
         for order in orders:
-            print(order)
             self._lemon_api.activate_order(order["results"].get("id"))
             print(f'Activated {order["results"].get("isin")}')
         return orders
