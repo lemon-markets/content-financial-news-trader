@@ -1,5 +1,6 @@
 #from datetime import datetime, timedelta
 import datetime
+import os
 from typing import List
 
 from news_trader.handlers.lemon import LemonMarketsAPI
@@ -32,20 +33,20 @@ class Helpers:
     def place_trades(self, buy: List[str], sell: List[str]):
         orders = []
 
-        space_uuid = self._lemon_api.get_space_uuid()
-        valid_time = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
+        space_id = os.environ.get("SPACE_ID")
+        expires_at = "p0d"
 
         # place buy orders
         for isin in buy:
             side = "buy"
             quantity = 1
             order = self._lemon_api.place_order(
-                isin, valid_time, quantity, side, space_uuid
+                isin, expires_at, quantity, side, space_id
             )
             orders.append(order)
             print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
 
-        portfolio = self._lemon_api.get_portfolio(space_uuid)
+        portfolio = self._lemon_api.get_portfolio(space_id)
 
         # place sell orders
         for isin in sell:
@@ -53,7 +54,7 @@ class Helpers:
                 side = "sell"
                 quantity = 1
                 order = self._lemon_api.place_order(
-                    isin, valid_time, quantity, side, space_uuid
+                    isin, expires_at, quantity, side, space_id
                 )
                 orders.append(order)
                 print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
@@ -66,9 +67,8 @@ class Helpers:
 
     def activate_order(self, orders):
         for order in orders:
-            space_id = self._lemon_api.get_space_uuid()
-            self._lemon_api.activate_order(order.get("uuid"), space_id)
-            print(f'Activated {order.get("isin")}')
+            self._lemon_api.activate_order(order["results"].get("id"))
+            print(f'Activated {order["results"].get("isin")}')
         return orders
 
     def is_venue_open(self):
