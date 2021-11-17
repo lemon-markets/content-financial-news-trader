@@ -17,21 +17,21 @@ def sentiment_analysis():
     market_watch_api: MarketWatchAPI = MarketWatchAPI()
     helpers: Helpers = Helpers(lemon_api)
 
-    # COMMENT FROM HERE...
-    headlines: HeadLines = market_watch_api.get_headlines()
-
-    headlines.sentiment_analysis()
-    headlines.aggregate_scores()
-
-    gm_tickers = figi_api.find_gm_tickers(headlines.get_tickers())
-    headlines.set_gm_tickers(gm_tickers)
-
-    headlines.raw_dataframe.to_csv("tickers_scores.csv")
-    # ...UP TO THIS POINT TO USE SAVED DATA
+    # # COMMENT FROM HERE...
+    # headlines: HeadLines = market_watch_api.get_headlines()
+    #
+    # headlines.sentiment_analysis()
+    # headlines.aggregate_scores()
+    #
+    # gm_tickers = figi_api.find_gm_tickers(headlines.get_tickers())
+    # headlines.set_gm_tickers(gm_tickers)
+    #
+    # headlines.raw_dataframe.to_csv("tickers_scores.csv")
+    # # ...UP TO THIS POINT TO USE SAVED DATA
 
     # uncomment lines below and comment all tagged lines above to use saved data
-    # import pandas as pd
-    # headlines = HeadLines(pd.read_csv("tickers_scores.csv"))
+    import pandas as pd
+    headlines = HeadLines(pd.read_csv("tickers_scores.csv"))
     helpers.get_isins(headlines)
 
     print(f"The highest sentiment score is: {headlines.max_score}")

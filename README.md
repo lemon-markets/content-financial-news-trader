@@ -36,11 +36,8 @@ The script uses several environment variables, configure your .env file as follo
 ```python
 MIC=XMUN
 TRADING_URL=https://paper-trading.lemon.markets/rest/v1/
-MARKET_URL=https://paper-data.lemon.markets/v1/
-AUTH_URL=https://auth.lemon.markets/
-CLIENT_ID=<your-client-id>
-CLIENT_SECRET=<your-client-secret>
-TOKEN_KEY=
+MARKET_URL=https://data.lemon.markets/v1/
+API_KEY=<your-api-key>
 OPENFIGI_URL=https://api.openfigi.com/v3/search/
 OPENFIGI_KEY=<your-openfigi-key>
 ```
