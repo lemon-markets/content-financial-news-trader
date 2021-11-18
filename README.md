@@ -6,7 +6,7 @@
 
 This is a public [lemon.markets](https://lemon.markets) repository that outlines a **sentiment analysis strategy** using our API. To get a general understanding of the API, please refer to our [documentation](https://docs.lemon.markets). The `financial-news-trader` scrapes headlines found on [MarketWatch.com](https://www.marketwatch.com/), performs sentiment analysis using VADER and places trades depending on the direction of the sentiment. Note that this is only a showcase of the product and should not be used as investment advice. 
 
-A walk-through of this script can be found in [this blog-post]().
+A walk-through of this script can be found in [this blog-post](https://medium.com/lemon-markets/automated-news-following-trading-strategy-using-sentiment-analysis-5940e86e4333).
 
 ## 🏃‍♂️ Quick Start
 Not interested in reading a novella before you get started? We get it! To get this project up and running quickly, here's what you need to do:
