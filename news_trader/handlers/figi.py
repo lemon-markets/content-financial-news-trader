@@ -16,6 +16,18 @@ class FigiAPI:
             "X-OPENFIGI-APIKEY": self._api_key,
         }
         response = requests.post(url=self._url, headers=headers, json=jobs)
+		
+		# catch invalid API key error, proceed without API
+        global figi_API_error
+        figi_API_error = False
+        if response.status_code == 401:
+            figi_API_error = True
+            print("FigiAPI error 401, proceeding without API")
+            headers = {
+				"Content-Type": "text/json",
+			}
+            response = requests.post(url=self._url, headers=headers, json=jobs)
+		
 
         if response.status_code != 200:
             raise Exception(f"Bad response code {response.status_code}")
@@ -32,6 +44,7 @@ class FigiAPI:
             job = {"query": ticker, "exchCode": "GM"}
             gm_ticker = self.search_jobs(job)
 
+
             # if instrument listed on GM, then collect ticker
             if gm_ticker.get("data"):
                 result = gm_ticker.get("data")[0].get("ticker")
@@ -43,7 +56,11 @@ class FigiAPI:
             iteration += 1
 
             # OpenFIGI allows 20 requests per minute, thus sleep for 60 seconds after every 20 requests
-            if iteration % 20 == 0:
+            if iteration % 20 == 0 and figi_API_error == False:
+                print("Sleeping for 60 seconds...")
+                time.sleep(60)
+            # 5 for without API
+            if iteration % 5 == 0 and figi_API_error == False:
                 print("Sleeping for 60 seconds...")
                 time.sleep(60)
         return gm_tickers
