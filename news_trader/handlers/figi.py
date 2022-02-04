@@ -10,11 +10,10 @@ class FigiAPI:
         self._api_key = os.environ.get("OPENFIGI_KEY")
         self._url = os.environ.get("OPENFIGI_URL")
         # request limit is 20 with and 5 without API key
+        self._max_amount_of_requests_per_second = 20
         if self._api_key is None:
             self._max_amount_of_requests_per_second = 5
-        else:
-            self._max_amount_of_requests_per_second = 20
-
+        
     def search_jobs(self, jobs: dict):
         headers = {
             "Content-Type": "text/json",
