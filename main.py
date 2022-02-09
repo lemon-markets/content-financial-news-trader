@@ -7,6 +7,7 @@ from news_trader.handlers.marketwatch import MarketWatchAPI
 
 from news_trader.headlines import HeadLines
 from news_trader.helpers import Helpers
+from news_trader.telegram import Telegram
 
 load_dotenv()
 
@@ -38,7 +39,9 @@ def sentiment_analysis():
     print(f"The lowest sentiment score is {headlines.min_score}")
 
     buy, sell = headlines.get_trade_decisions()
-    orders = helpers.place_trades(buy, sell)
+    orders, messages = helpers.place_trades(buy, sell)
+    # send telegram messages with orders
+    [telegram.send_message(messages) for message in messages]
     helpers.activate_order(orders)
 
     # sleep for 3 days

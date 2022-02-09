@@ -32,6 +32,7 @@ class Helpers:
 
     def place_trades(self, buy: List[str], sell: List[str]):
         orders = []
+        messages = []
 
         space_id = os.environ.get("SPACE_ID")
         expires_at = "p0d"
@@ -44,7 +45,9 @@ class Helpers:
                 isin, expires_at, quantity, side, space_id
             )
             orders.append(order)
-            print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
+            message = (f"You are {side}ing {quantity} share(s) of instrument {isin}.")
+            print(message)
+            messages.append(message)
 
         portfolio = self._lemon_api.get_portfolio(space_id)
 
@@ -57,11 +60,15 @@ class Helpers:
                     isin, expires_at, quantity, side, space_id
                 )
                 orders.append(order)
-                print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
+                message =(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
+                print(message)
+                messages.append(message)
             else:
-                print(
+                message =(
                     f"You do not have sufficient holdings of instrument {isin} to place a sell order."
                 )
+                print(message)
+                messages.append(message)
 
         return orders
 
