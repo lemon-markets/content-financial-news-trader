@@ -38,11 +38,10 @@ MIC=XMUN
 TRADING_URL=https://paper-trading.lemon.markets/v1/
 MARKET_URL=https://data.lemon.markets/v1/
 API_KEY=<your-api-key>
-SPACE_ID=<your-space-id>
 OPENFIGI_URL=https://api.openfigi.com/v3/search/
 OPENFIGI_KEY=<your-openfigi-key>
 ```
-Please provide your unique `API_KEY`,`SPACE_ID` and `OPENFIGI_KEY`.
+Please provide your unique `API_KEY` and `OPENFIGI_KEY`.
 
 ## ❓ What's happening under the hood?
 ### 📊 Collecting Data

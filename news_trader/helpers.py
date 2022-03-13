@@ -33,7 +33,6 @@ class Helpers:
     def place_trades(self, buy: List[str], sell: List[str]):
         orders = []
 
-        space_id = os.environ.get("SPACE_ID")
         expires_at = "p0d"
 
         # place buy orders
@@ -41,20 +40,24 @@ class Helpers:
             side = "buy"
             quantity = 1
             order = self._lemon_api.place_order(
-                isin, expires_at, quantity, side, space_id
+                isin, expires_at, quantity, side
             )
             orders.append(order)
             print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
 
-        portfolio = self._lemon_api.get_portfolio(space_id)
+        portfolio = self._lemon_api.get_portfolio()
+        portfolio_isins = []
+
+        for item in portfolio:
+            portfolio_isins.append(item.get("isin"))
 
         # place sell orders
         for isin in sell:
-            if isin in portfolio:
+            if isin in portfolio_isins:
                 side = "sell"
                 quantity = 1
                 order = self._lemon_api.place_order(
-                    isin, expires_at, quantity, side, space_id
+                    isin, expires_at, quantity, side
                 )
                 orders.append(order)
                 print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
@@ -92,6 +95,3 @@ class Helpers:
         else:
             print("Trading venue is open")
             return 0
-
-
-
