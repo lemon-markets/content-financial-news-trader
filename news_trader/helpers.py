@@ -24,7 +24,7 @@ class Helpers:
                     print(e)
                     raise
                 else:
-                    if instrument.get("count") > 0:
+                    if instrument.get("total") > 0:
                         isins.append(instrument.get("results")[0].get("isin"))
                     else:
                         isins.append("NA")

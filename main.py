@@ -50,7 +50,7 @@ def perform_sentiment_analysis():
     helpers: Helpers = Helpers(lemon_api)
 
     while True:
-        if not helpers.is_venue_open():
+        if helpers.is_venue_open():
             sentiment_analysis()
         else:
             time.sleep(helpers.seconds_until_open())
