@@ -38,7 +38,7 @@ class LemonMarketsAPI(RequestHandler):
         return self.get_data_market(f"instruments/?search={query}&type=stock")
 
     def place_order(
-        self, isin: str, expires_at: str, quantity: int, side: str, space_id: str
+        self, isin: str, expires_at: str, quantity: int, side: str
     ):
         venue = os.environ.get("MIC")
 
@@ -47,7 +47,6 @@ class LemonMarketsAPI(RequestHandler):
             "expires_at": expires_at,
             "side": side,
             "quantity": quantity,
-            "space_id": space_id,
             "venue": venue
         }
         return self.post_data(f"orders/", order_details)
@@ -57,8 +56,8 @@ class LemonMarketsAPI(RequestHandler):
             f"orders/{order_id}/activate/", {}
         )
 
-    def get_portfolio(self, space_id) -> list:
-        return self.get_data_trading(f"portfolio/?space_id={space_id}")[
+    def get_portfolio(self) -> list:
+        return self.get_data_trading(f"portfolio/")[
             "results"
         ]
 
