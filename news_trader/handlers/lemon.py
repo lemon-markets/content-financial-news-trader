@@ -56,8 +56,8 @@ class LemonMarketsAPI(RequestHandler):
             f"orders/{order_id}/activate/", {}
         )
 
-    def get_portfolio(self) -> list:
-        return self.get_data_trading(f"portfolio/")[
+    def get_positions(self) -> list:
+        return self.get_data_trading(f"positions/")[
             "results"
         ]
 

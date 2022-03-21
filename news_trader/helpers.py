@@ -45,15 +45,15 @@ class Helpers:
             orders.append(order)
             print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
 
-        portfolio = self._lemon_api.get_portfolio()
-        portfolio_isins = []
+        positions = self._lemon_api.get_positions()
+        positions_isins = []
 
-        for item in portfolio:
-            portfolio_isins.append(item.get("isin"))
+        for item in positions:
+            positions_isins.append(item.get("isin"))
 
         # place sell orders
         for isin in sell:
-            if isin in portfolio_isins:
+            if isin in positions_isins:
                 side = "sell"
                 quantity = 1
                 order = self._lemon_api.place_order(
