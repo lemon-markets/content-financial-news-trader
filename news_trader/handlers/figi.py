@@ -13,14 +13,13 @@ class FigiAPI:
         self._max_amount_of_requests_per_second = 20
         if self._api_key is None:
             self._max_amount_of_requests_per_second = 5
-        
+
     def search_jobs(self, jobs: dict):
         headers = {
             "Content-Type": "text/json",
             "X-OPENFIGI-APIKEY": self._api_key,
         }
         response = requests.post(url=self._url, headers=headers, json=jobs)
-
 
         if response.status_code != 200:
             raise Exception(f"Bad response code {response.status_code}")
@@ -36,7 +35,6 @@ class FigiAPI:
         for ticker in tickers:
             job = {"query": ticker, "exchCode": "GM"}
             gm_ticker = self.search_jobs(job)
-
 
             # if instrument listed on GM, then collect ticker
             if gm_ticker.get("data"):
