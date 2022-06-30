@@ -64,7 +64,7 @@ def schedule_trades_for_year():
 
 if __name__ == "__main__":
     scheduler = BlockingScheduler(timezone=utc)
-    
+
     sentiment_analysis()
     schedule_trades_for_year()
 
