@@ -57,6 +57,7 @@ def sentiment_analysis():
 if __name__ == "__main__":
     scheduler = BlockingScheduler(timezone=utc)
 
+    sentiment_analysis()
     # reschedule your trades for the future years ad infinitum
     scheduler.add_job(sentiment_analysis,
                       trigger=CronTrigger(day_of_week="mon-fri",

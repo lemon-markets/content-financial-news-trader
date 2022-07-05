@@ -42,7 +42,9 @@ class Helpers:
         # place buy orders
         for isin in buy:
             side = "buy"
-            price = self.client.market_data.quotes.get_latest(isin=isin).results[0].b * quantity
+            if isin == "NA":
+                continue
+            price = self.client.market_data.quotes.get_latest(isin=isin).results[0].a * quantity
             if price < 50:
                 print(f"Order cannot be placed as total price, €{price}, is less than minimum order amount of €50.")
                 continue
@@ -60,9 +62,11 @@ class Helpers:
 
         # place sell orders
         for isin in sell:
+            if isin == "NA":
+                continue
             if isin in positions_isins:
                 side = "sell"
-                price = self.client.market_data.quotes.get_latest(isin=isin).results[0].a * quantity
+                price = self.client.market_data.quotes.get_latest(isin=isin).results[0].b * quantity
                 if price < 50:
                     print(f"Order cannot be placed as total price, €{price}, is less than minimum order amount of €50.")
                     continue
