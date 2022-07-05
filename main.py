@@ -24,7 +24,11 @@ client = api.create(
 def sentiment_analysis():
     figi_api: FigiAPI = FigiAPI()
     market_watch_api: MarketWatchAPI = MarketWatchAPI()
-
+    venue = helpers.client.market_data.venues.get(os.getenv('MIC')).results[0]
+    if not venue.is_open:
+        print(f"Venue is not open. Next opening day is {venue.opening_days[0].day}-{venue.opening_days[0].month}"
+              f"-{venue.opening_days[0].year}")
+        return
     # COMMENT FROM HERE...
     headlines: HeadLines = market_watch_api.get_headlines()
 
@@ -50,30 +54,14 @@ def sentiment_analysis():
     helpers.activate_order(order_ids=order_ids)
 
 
-def schedule_trades_for_year():
-    opening_days = helpers.get_open_days()
-
-    for i in range(len(opening_days)):
-        scheduler.add_job(sentiment_analysis,
-                          trigger=CronTrigger(month=opening_days[i].month,
-                                              day=opening_days[i].day,
-                                              hour=13,
-                                              minute=9,
-                                              timezone=utc))
-
-
 if __name__ == "__main__":
     scheduler = BlockingScheduler(timezone=utc)
 
-    sentiment_analysis()
-    schedule_trades_for_year()
-
     # reschedule your trades for the future years ad infinitum
-    scheduler.add_job(schedule_trades_for_year,
-                      trigger=CronTrigger(month=1,
-                                          day=1,
-                                          hour=0,
-                                          minute=0,
+    scheduler.add_job(sentiment_analysis,
+                      trigger=CronTrigger(day_of_week="mon-fri",
+                                          hour=10,
+                                          minute=30,
                                           timezone=utc))
 
     print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
