@@ -83,6 +83,3 @@ class Helpers:
             self.client.trading.orders.activate(order_id)
             print(f'Activated {self.client.trading.orders.get_order(order_id=order_id).results.isin_title}')
         return order_ids
-
-    def get_open_days(self):
-        return self.client.market_data.venues.get(os.getenv("MIC")).results[0].opening_days
