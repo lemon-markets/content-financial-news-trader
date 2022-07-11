@@ -1,15 +1,18 @@
-#from datetime import datetime, timedelta
-import datetime
 import os
 from typing import List
 
-from news_trader.handlers.lemon import LemonMarketsAPI
+from lemon import api
+
 from news_trader.headlines import HeadLines
 
 
 class Helpers:
-    def __init__(self, lemon_api: LemonMarketsAPI):
-        self._lemon_api = lemon_api
+    def __init__(self):
+        self.client = api.create(
+            trading_api_token=os.getenv("TRADING_API_KEY"),
+            market_data_api_token=os.getenv("DATA_API_KEY"),
+            env="paper"
+        )
 
     def get_isins(self, headlines: HeadLines):
         isins = []
@@ -19,79 +22,68 @@ class Helpers:
                 isins.append("NA")
             else:
                 try:
-                    instrument = self._lemon_api.get_instrument(ticker)
+                    instruments = self.client.market_data.instruments.get(search=ticker, type="stock")
                 except Exception as e:
                     print(e)
                     raise
                 else:
-                    if instrument.get("total") > 0:
-                        isins.append(instrument.get("results")[0].get("isin"))
+                    if instruments.total > 0:
+                        isins.append(instruments.results[0].isin)
                     else:
                         isins.append("NA")
         headlines.set_isins(isins)
 
     def place_trades(self, buy: List[str], sell: List[str]):
-        orders = []
+        order_ids = []
 
-        expires_at = "p0d"
+        expires_at = 0
+        quantity = 1
 
         # place buy orders
         for isin in buy:
             side = "buy"
-            quantity = 1
-            order = self._lemon_api.place_order(
-                isin, expires_at, quantity, side
+            if isin == "NA":
+                continue
+            price = self.client.market_data.quotes.get_latest(isin=isin).results[0].a * quantity
+            if price < 50:
+                print(f"Order cannot be placed as total price, €{price}, is less than minimum order amount of €50.")
+                continue
+            order = self.client.trading.orders.create(
+                isin=isin, expires_at=expires_at, quantity=quantity, side=side
             )
-            orders.append(order)
+            order_ids.append(order.results.id)
             print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
 
-        portfolio = self._lemon_api.get_portfolio()
-        portfolio_isins = []
+        positions = self.client.trading.positions.get().results
+        positions_isins = []
 
-        for item in portfolio:
-            portfolio_isins.append(item.get("isin"))
+        for item in positions:
+            positions_isins.append(item.isin)
 
         # place sell orders
         for isin in sell:
-            if isin in portfolio_isins:
+            if isin == "NA":
+                continue
+            if isin in positions_isins:
                 side = "sell"
-                quantity = 1
-                order = self._lemon_api.place_order(
-                    isin, expires_at, quantity, side
+                price = self.client.market_data.quotes.get_latest(isin=isin).results[0].b * quantity
+                if price < 50:
+                    print(f"Order cannot be placed as total price, €{price}, is less than minimum order amount of €50.")
+                    continue
+                order = self.client.trading.orders.create(
+                    isin=isin, expires_at=expires_at, quantity=quantity, side=side
                 )
-                orders.append(order)
+                order_ids.append(order.results.id)
                 print(f"You are {side}ing {quantity} share(s) of instrument {isin}.")
             else:
                 print(
                     f"You do not have sufficient holdings of instrument {isin} to place a sell order."
                 )
 
-        return orders
+        return order_ids
 
-    def activate_order(self, orders):
-        for order in orders:
-            self._lemon_api.activate_order(order["results"].get("id"))
-            print(f'Activated {order["results"].get("isin")}')
-        return orders
-
-    def is_venue_open(self):
-        return self._lemon_api.get_venue()["is_open"]
-
-    def seconds_until_open(self):
-        venue = self._lemon_api.get_venue()
-        today = datetime.datetime.today()
-        next_opening_time = datetime.datetime.strptime(venue["opening_hours"]["start"], "%H:%M")
-        next_opening_day = datetime.datetime.strptime(venue["opening_days"][0], "%Y-%m-%d")
-
-        date_difference = next_opening_day - today
-        days = date_difference.days + 1
-        if not self.is_venue_open():
-            print("Trading venue is not open")
-            time_delta = datetime.datetime.combine(
-                datetime.datetime.now().date() + datetime.timedelta(days=1), next_opening_time.time()
-            ) - datetime.datetime.now()
-            print(time_delta.seconds + (days * 86400))
-            return time_delta.seconds
-        else:
-            print("Trading venue is open")
-            return 0
+    def activate_order(self, order_ids):
+        for order_id in order_ids:
+            self.client.trading.orders.activate(order_id)
+            print(f'Activated {self.client.trading.orders.get_order(order_id=order_id).results.isin_title}')
+        return order_ids

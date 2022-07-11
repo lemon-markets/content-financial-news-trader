@@ -1,22 +1,34 @@
+import os
+
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
-import time
+from pytz import utc
+from lemon import api
 
 from news_trader.handlers.figi import FigiAPI
-from news_trader.handlers.lemon import LemonMarketsAPI
 from news_trader.handlers.marketwatch import MarketWatchAPI
-
 from news_trader.headlines import HeadLines
 from news_trader.helpers import Helpers
 
 load_dotenv()
+helpers: Helpers = Helpers()
+
+client = api.create(
+    trading_api_token=os.getenv("TRADING_API_KEY"),
+    market_data_api_token=os.getenv("DATA_API_KEY"),
+    env="paper"
+)
 
 
 def sentiment_analysis():
-    lemon_api: LemonMarketsAPI = LemonMarketsAPI()
     figi_api: FigiAPI = FigiAPI()
     market_watch_api: MarketWatchAPI = MarketWatchAPI()
-    helpers: Helpers = Helpers(lemon_api)
-
+    venue = helpers.client.market_data.venues.get(os.getenv('MIC')).results[0]
+    if not venue.is_open:
+        print(f"Venue is not open. Next opening day is {venue.opening_days[0].day}-{venue.opening_days[0].month}"
+              f"-{venue.opening_days[0].year}")
+        return
     # COMMENT FROM HERE...
     headlines: HeadLines = market_watch_api.get_headlines()
 
@@ -38,23 +50,23 @@ def sentiment_analysis():
     print(f"The lowest sentiment score is {headlines.min_score}")
 
     buy, sell = headlines.get_trade_decisions()
-    orders = helpers.place_trades(buy, sell)
-    helpers.activate_order(orders)
-
-    # sleep for 3 days
-    time.sleep(259200)
-
-
-def perform_sentiment_analysis():
-    lemon_api: LemonMarketsAPI = LemonMarketsAPI()
-    helpers: Helpers = Helpers(lemon_api)
-
-    while True:
-        if helpers.is_venue_open():
-            sentiment_analysis()
-        else:
-            time.sleep(helpers.seconds_until_open())
+    order_ids = helpers.place_trades(buy, sell)
+    helpers.activate_order(order_ids=order_ids)
 
 
 if __name__ == "__main__":
-    perform_sentiment_analysis()
+    scheduler = BlockingScheduler(timezone=utc)
+
+    # reschedule your trades for the future years ad infinitum
+    scheduler.add_job(sentiment_analysis,
+                      trigger=CronTrigger(day_of_week="mon-fri",
+                                          hour=10,
+                                          minute=30,
+                                          timezone=utc))
+
+    print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
+
+    try:
+        scheduler.start()
+    except (KeyboardInterrupt, SystemExit):
+        pass
